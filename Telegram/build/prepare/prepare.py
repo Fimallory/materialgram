@@ -82,7 +82,7 @@ if not os.path.isdir(os.path.join(thirdPartyDir, keysLoc)):
     pathlib.Path(os.path.join(thirdPartyDir, keysLoc)).mkdir(parents=True, exist_ok=True)
 
 pathPrefixes = [
-    'ThirdParty\\msys64\\mingw64\\bin',
+    'ThirdParty\\msys64\\ucrt64\\bin',
     'ThirdParty\\jom',
     'ThirdParty\\gyp',
 ] if win else [
@@ -468,18 +468,18 @@ win:
     SET CHERE_INVOKING=enabled_from_arguments
     SET MSYS2_PATH_TYPE=inherit
 
-    powershell -Command "iwr -OutFile ./msys64.exe https://github.com/msys2/msys2-installer/releases/download/2025-08-30/msys2-base-x86_64-20250830.sfx.exe"
+    powershell -Command "iwr -OutFile ./msys64.exe https://github.com/msys2/msys2-installer/releases/download/2026-09-27/msys2-base-x86_64-20260927.sfx.exe"
     msys64.exe
     del msys64.exe
 
     bash -c "pacman-key --init; pacman-key --populate; pacman -Syu --noconfirm"
     pacman -Syu --noconfirm ^
         make ^
-        mingw-w64-x86_64-diffutils ^
-        mingw-w64-x86_64-gperf ^
-        mingw-w64-x86_64-nasm ^
-        mingw-w64-x86_64-perl ^
-        mingw-w64-x86_64-pkgconf
+        mingw-w64-ucrt-x86_64-diffutils ^
+        mingw-w64-ucrt-x86_64-gperf ^
+        mingw-w64-ucrt-x86_64-nasm ^
+        mingw-w64-ucrt-x86_64-perl ^
+        mingw-w64-ucrt-x86_64-pkgconf
 """, 'ThirdParty')
 
 stage('python', """
@@ -515,6 +515,27 @@ mac:
         --ignore-installed \\
         --target=$THIRDPARTY_DIR/gyp \\
         git+https://chromium.googlesource.com/external/gyp@master six
+""", 'ThirdParty')
+
+rustToolchain = '1.96.1'
+stage('rust', """
+win:
+    powershell -Command "iwr -OutFile ./rustup-init.exe https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe"
+    SET "RUSTUP_HOME=%THIRDPARTY_DIR%\\rust\\rustup"
+    SET "CARGO_HOME=%THIRDPARTY_DIR%\\rust\\cargo"
+    rustup-init.exe -y --no-modify-path --profile minimal ^
+        --default-toolchain """ + rustToolchain + """ ^
+        --component rust-src
+    del rustup-init.exe
+mac:
+    wget -O rustup-init.sh https://sh.rustup.rs
+    export RUSTUP_HOME=$THIRDPARTY_DIR/rust/rustup
+    export CARGO_HOME=$THIRDPARTY_DIR/rust/cargo
+    sh rustup-init.sh -y --no-modify-path --profile minimal \\
+        --default-toolchain """ + rustToolchain + """ \\
+        --target aarch64-apple-darwin \\
+        --target x86_64-apple-darwin
+    rm rustup-init.sh
 """, 'ThirdParty')
 
 stage('lzma', """
