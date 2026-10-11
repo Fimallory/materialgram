@@ -16,7 +16,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 namespace Api {
 namespace {
 
-constexpr auto kMinSponsoredQueryLength = 4;
+[[maybe_unused]] constexpr auto kMinSponsoredQueryLength = 4;
 
 } // namespace
 
@@ -53,10 +53,9 @@ void PeerSearch::request(
 	}
 	cache.requested = true;
 	cache.result.query = _query;
-	if (_query.size() < kMinSponsoredQueryLength) {
-		cache.sponsoredReady = true;
-	} else if (_type == Type::WithSponsored) {
-		requestSponsored();
+	cache.sponsoredReady = true;
+	if (_type == Type::WithSponsored) {
+		cache.result.sponsored.clear();
 	}
 	requestPeers();
 }

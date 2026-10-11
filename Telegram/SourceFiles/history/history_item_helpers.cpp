@@ -850,40 +850,17 @@ ClickHandlerPtr JumpToStoryClickHandler(
 }
 
 ClickHandlerPtr HideSponsoredClickHandler() {
-	return std::make_shared<LambdaClickHandler>([=](ClickContext context) {
-		const auto my = context.other.value<ClickHandlerContext>();
-		if (const auto controller = my.sessionWindow.get()) {
-			const auto &session = controller->session();
-			if (session.premium()) {
-				using Result = Data::SponsoredReportResult;
-				session.sponsoredMessages().createReportCallback(
-					my.itemId
-				).callback(Result::Id("-1"), [](const auto &) {});
-			} else {
-				ShowPremiumPreviewBox(controller, PremiumFeature::NoAds);
-			}
-		}
+	return std::make_shared<LambdaClickHandler>([=](ClickContext) {
 	});
 }
 
-ClickHandlerPtr ReportSponsoredClickHandler(not_null<HistoryItem*> item) {
-	return std::make_shared<LambdaClickHandler>([=](ClickContext context) {
-		const auto my = context.other.value<ClickHandlerContext>();
-		if (const auto controller = my.sessionWindow.get()) {
-			Menu::ShowSponsored(
-				controller->widget(),
-				controller->uiShow(),
-				item->fullId());
-		}
+ClickHandlerPtr ReportSponsoredClickHandler(not_null<HistoryItem*>) {
+	return std::make_shared<LambdaClickHandler>([=](ClickContext) {
 	});
 }
 
 ClickHandlerPtr AboutSponsoredClickHandler() {
-	return std::make_shared<LambdaClickHandler>([=](ClickContext context) {
-		const auto my = context.other.value<ClickHandlerContext>();
-		if (const auto controller = my.sessionWindow.get()) {
-			Menu::ShowSponsoredAbout(controller->uiShow(), my.itemId);
-		}
+	return std::make_shared<LambdaClickHandler>([=](ClickContext) {
 	});
 }
 

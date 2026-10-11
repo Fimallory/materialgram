@@ -238,123 +238,28 @@ void SponsoredMessages::inject(
 	}
 }
 
-bool SponsoredMessages::canHaveFor(not_null<History*> history) const {
-	if (history->peer->isChannel()) {
-		return true;
-	} else if (const auto user = history->peer->asUser()) {
-		return user->isBot();
-	}
+bool SponsoredMessages::canHaveFor(not_null<History*>) const {
 	return false;
 }
 
-bool SponsoredMessages::canHaveFor(not_null<HistoryItem*> item) const {
-	return item->history()->peer->isBroadcast()
-		&& item->isRegular();
-}
-
-bool SponsoredMessages::isTopBarFor(not_null<History*> history) const {
-	if (peerIsUser(history->peer->id)) {
-		if (const auto user = history->peer->asUser()) {
-			return user->isBot();
-		}
-	}
+bool SponsoredMessages::canHaveFor(not_null<HistoryItem*>) const {
 	return false;
 }
 
-void SponsoredMessages::request(not_null<History*> history, Fn<void()> done) {
-	if (!canHaveFor(history)) {
-		return;
-	}
-	auto &request = _requests[history];
-	if (request.requestId || TooEarlyForRequest(request.lastReceived)) {
-		return;
-	}
-	{
-		const auto it = _data.find(history);
-		if (it != end(_data)) {
-			auto &list = it->second;
-			// Don't rebuild currently displayed messages.
-			const auto proj = [](const Entry &e) {
-				return e.item != nullptr;
-			};
-			if (ranges::any_of(list.entries, proj)) {
-				return;
-			}
-		}
-	}
-	request.requestId = _session->api().request(
-		MTPmessages_GetSponsoredMessages(
-			MTP_flags(0),
-			history->peer->input(),
-			MTPint()) // msg_id
-	).done([=](const MTPmessages_sponsoredMessages &result) {
-		parse(history, result);
-		if (done) {
-			done();
-		}
-	}).fail([=] {
-		_requests.remove(history);
-	}).send();
+bool SponsoredMessages::isTopBarFor(not_null<History*>) const {
+	return false;
+}
+
+void SponsoredMessages::request(not_null<History*>, Fn<void()>) {
+	return;
 }
 
 void SponsoredMessages::requestForVideo(
-		not_null<HistoryItem*> item,
+		not_null<HistoryItem*>,
 		Fn<void(SponsoredForVideo)> done) {
 	Expects(done != nullptr);
 
-	if (!canHaveFor(item)) {
-		done({});
-		return;
-	}
-	const auto peer = item->history()->peer;
-	auto &request = _requestsForVideo[peer];
-	if (TooEarlyForRequest(request.lastReceived)) {
-		auto prepared = prepareForVideo(peer);
-		if (prepared.list.empty()
-			|| prepared.state.itemIndex < prepared.list.size()
-			|| prepared.state.leftTillShow > 0) {
-			done(std::move(prepared));
-			return;
-		}
-	}
-	request.callbacks.push_back(std::move(done));
-	if (request.requestId) {
-		return;
-	}
-	{
-		const auto it = _dataForVideo.find(peer);
-		if (it != end(_dataForVideo)) {
-			auto &list = it->second;
-			// Don't rebuild currently displayed messages.
-			const auto proj = [](const Entry &e) {
-				return e.item != nullptr;
-			};
-			if (ranges::any_of(list.entries, proj)) {
-				return;
-			}
-		}
-	}
-	const auto finish = [=] {
-		const auto i = _requestsForVideo.find(peer);
-		if (i != end(_requestsForVideo)) {
-			for (const auto &callback : base::take(i->second.callbacks)) {
-				callback(prepareForVideo(peer));
-			}
-		}
-	};
-	using Flag = MTPmessages_GetSponsoredMessages::Flag;
-	request.requestId = _session->api().request(
-		MTPmessages_GetSponsoredMessages(
-			MTP_flags(Flag::f_msg_id),
-			peer->input(),
-			MTP_int(item->id.bare))
-	).done([=](const MTPmessages_sponsoredMessages &result) {
-		parseForVideo(peer, result);
-		finish();
-	}).fail([=] {
-		_requestsForVideo.remove(peer);
-		finish();
-	}).send();
+	done({});
 }
 
 void SponsoredMessages::updateForVideo(
@@ -656,28 +561,12 @@ const SponsoredMessages::Entry *SponsoredMessages::find(
 	return &*entryIt;
 }
 
-void SponsoredMessages::view(const FullMsgId &fullId) {
-	const auto entryPtr = find(fullId);
-	if (!entryPtr) {
-		return;
-	}
-	view(entryPtr->sponsored.randomId);
+void SponsoredMessages::view(const FullMsgId &) {
+	return;
 }
 
-void SponsoredMessages::view(const QByteArray &randomId) {
-	auto &request = _viewRequests[randomId];
-	if (request.requestId || TooEarlyForRequest(request.lastReceived)) {
-		return;
-	}
-	request.requestId = _session->api().request(
-		MTPmessages_ViewSponsoredMessage(MTP_bytes(randomId))
-	).done([=] {
-		auto &request = _viewRequests[randomId];
-		request.lastReceived = crl::now();
-		request.requestId = 0;
-	}).fail([=] {
-		_viewRequests.remove(randomId);
-	}).send();
+void SponsoredMessages::view(const QByteArray &) {
+	return;
 }
 
 SponsoredMessages::Details SponsoredMessages::lookupDetails(
@@ -714,27 +603,17 @@ SponsoredMessages::Details SponsoredMessages::lookupDetails(
 }
 
 void SponsoredMessages::clicked(
-		const FullMsgId &fullId,
-		bool isMedia,
-		bool isFullscreen) {
-	const auto entryPtr = find(fullId);
-	if (!entryPtr) {
-		return;
-	}
-	clicked(entryPtr->sponsored.randomId, isMedia, isFullscreen);
+		const FullMsgId &,
+		bool,
+		bool) {
+	return;
 }
 
 void SponsoredMessages::clicked(
-		const QByteArray &randomId,
-		bool isMedia,
-		bool isFullscreen) {
-	using Flag = MTPmessages_ClickSponsoredMessage::Flag;
-	_session->api().request(MTPmessages_ClickSponsoredMessage(
-		MTP_flags(Flag(0)
-			| (isMedia ? Flag::f_media : Flag(0))
-			| (isFullscreen ? Flag::f_fullscreen : Flag(0))),
-		MTP_bytes(randomId)
-	)).send();
+		const QByteArray &,
+		bool,
+		bool) {
+	return;
 }
 
 SponsoredReportAction SponsoredMessages::createReportCallback(
@@ -758,94 +637,22 @@ SponsoredReportAction SponsoredMessages::createReportCallback(
 }
 
 SponsoredReportAction SponsoredMessages::createReportCallback(
-		const QByteArray &randomId,
+		const QByteArray &,
 		Fn<void()> erase) {
-	using TLChoose = MTPDchannels_sponsoredMessageReportResultChooseOption;
-	using TLAdsHidden = MTPDchannels_sponsoredMessageReportResultAdsHidden;
-	using TLReported = MTPDchannels_sponsoredMessageReportResultReported;
-	using Result = SponsoredReportResult;
-
-	struct State final {
-#ifdef _DEBUG
-		~State() {
-			qDebug() << "SponsoredMessages Report ~State().";
-		}
-#endif
-		mtpRequestId requestId = 0;
-	};
-	const auto state = std::make_shared<State>();
-
-	return { .callback = [=](Result::Id optionId, Fn<void(Result)> done) {
-		if (optionId == Result::Id("-1")) {
+	return { .callback = [=](const auto &...) {
+		if (erase) {
 			erase();
-			return;
 		}
-
-		state->requestId = _session->api().request(
-			MTPmessages_ReportSponsoredMessage(
-				MTP_bytes(randomId),
-				MTP_bytes(optionId))
-		).done([=](
-				const MTPchannels_SponsoredMessageReportResult &result,
-				mtpRequestId requestId) {
-			if (state->requestId != requestId) {
-				return;
-			}
-			state->requestId = 0;
-			done(result.match([&](const TLChoose &data) {
-				const auto t = qs(data.vtitle());
-				auto list = Result::Options();
-				list.reserve(data.voptions().v.size());
-				for (const auto &tl : data.voptions().v) {
-					list.emplace_back(Result::Option{
-						.id = tl.data().voption().v,
-						.text = qs(tl.data().vtext()),
-					});
-				}
-				return Result{ .options = std::move(list), .title = t };
-			}, [](const TLAdsHidden &data) -> Result {
-				return { .result = Result::FinalStep::Hidden };
-			}, [&](const TLReported &data) -> Result {
-				erase();
-				if (optionId == Result::Id("1")) { // I don't like it.
-					return { .result = Result::FinalStep::Silence };
-				}
-				return { .result = Result::FinalStep::Reported };
-			}));
-		}).fail([=](const MTP::Error &error) {
-			state->requestId = 0;
-			if (error.type() == u"PREMIUM_ACCOUNT_REQUIRED"_q) {
-				done({ .result = Result::FinalStep::Premium });
-			} else {
-				done({ .error = error.type() });
-			}
-		}).send();
 	} };
 }
 
 SponsoredMessages::State SponsoredMessages::state(
-		not_null<History*> history) const {
-	const auto it = _data.find(history);
-	return (it == end(_data)) ? State::None : it->second.state;
+		not_null<History*>) const {
+	return State::None;
 }
 
-bool SponsoredMessages::hasUnshownFor(not_null<History*> history) const {
-	if (isTopBarFor(history)) {
-		return false;
-	}
-	const auto it = _data.find(history);
-	if (it == end(_data)) {
-		return false;
-	}
-	const auto &list = it->second;
-	if (list.showedAll
-		|| !TooEarlyForRequest(list.received)
-		|| list.postsBetween) {
-		return false;
-	}
-	return ranges::any_of(list.entries, [](const Entry &entry) {
-		return (entry.item == nullptr);
-	});
+bool SponsoredMessages::hasUnshownFor(not_null<History*>) const {
+	return false;
 }
 
 } // namespace Data

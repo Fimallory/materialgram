@@ -1554,6 +1554,7 @@ void ProxyBox::setupTypes() {
 				tr::lng_proxy_sponsor_warning(tr::now),
 				st::boxDividerLabel),
 			st::proxyAboutSponsorPadding)));
+	_aboutSponsored->toggle(false, anim::type::instant);
 }
 
 void ProxyBox::setupSocketAddress(const ProxyData &data) {
@@ -1663,7 +1664,7 @@ void ProxyBox::setupControls(const ProxyData &data) {
 		const auto mtprotoShown = (type == Type::Mtproto);
 		_credentials->toggle(credentialsShown, anim::type::instant);
 		_mtprotoCredentials->toggle(mtprotoShown, anim::type::instant);
-		_aboutSponsored->toggle(mtprotoShown, anim::type::instant);
+		_aboutSponsored->toggle(false, anim::type::instant);
 		const auto credentialsPolicy = credentialsShown
 			? Qt::StrongFocus
 			: Qt::NoFocus;

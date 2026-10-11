@@ -427,7 +427,7 @@ Widget::Widget(
 		_storiesContents.events() | rpl::flatten_latest())
 	: nullptr)
 , _searchTimer([=] { search(); })
-, _peerSearch(&controller->session(), Api::PeerSearch::Type::WithSponsored)
+, _peerSearch(&controller->session(), Api::PeerSearch::Type::JustPeers)
 , _singleMessageSearch(&controller->session()) {
 	const auto makeChildListShown = [](PeerId peerId, float64 shown) {
 		return InnerWidget::ChildListShown{ peerId, shown };

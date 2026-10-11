@@ -109,6 +109,18 @@ void PromoSuggestions::refreshTopPromotion() {
 			) | ranges::views::transform([](const auto &suggestion) {
 				return qs(suggestion);
 			}) | ranges::to_vector;
+			pendingSuggestions.erase(
+				ranges::remove_if(
+					pendingSuggestions,
+					[](const QString &suggestion) {
+						return (suggestion == u"PREMIUM_ANNUAL"_q)
+							|| (suggestion == u"PREMIUM_UPGRADE"_q)
+							|| (suggestion == u"PREMIUM_RESTORE"_q)
+							|| (suggestion == u"PREMIUM_GRACE"_q)
+							|| (suggestion
+								== u"STARS_SUBSCRIPTION_LOW_BALANCE"_q);
+					}),
+				end(pendingSuggestions));
 			for (const auto &suggestion : pendingSuggestions) {
 				if (suggestion == u"SETUP_LOGIN_EMAIL_NOSKIP"_q) {
 					_setupEmailState = SetupEmailState::SetupNoSkip;
@@ -130,16 +142,7 @@ void PromoSuggestions::refreshTopPromotion() {
 					|= _dismissedSuggestions.emplace(qs(suggestion)).second;
 			}
 
-			if (const auto peer = data.vpeer()) {
-				const auto peerId = peerFromMTP(*peer);
-				const auto history = _session->data().history(peerId);
-				setTopPromoted(
-					history,
-					data.vpsa_type().value_or_empty(),
-					data.vpsa_message().value_or_empty());
-			} else {
-				setTopPromoted(nullptr, QString(), QString());
-			}
+			setTopPromoted(nullptr, QString(), QString());
 
 			auto changedCustom = false;
 			auto custom = data.vcustom_pending_suggestion()
@@ -147,7 +150,8 @@ void PromoSuggestions::refreshTopPromotion() {
 					CustomFromTL(
 						_session,
 						*data.vcustom_pending_suggestion()))
-				: std::nullopt;
+				: std::optional<CustomSuggestion>();
+			custom = std::nullopt;
 			if (_custom != custom) {
 				_custom = std::move(custom);
 				changedCustom = true;

@@ -42,13 +42,13 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 namespace Menu {
 namespace {
 
-[[nodiscard]] SponsoredPhrases PhrasesForMessage(FullMsgId fullId) {
+[[nodiscard, maybe_unused]] SponsoredPhrases PhrasesForMessage(FullMsgId fullId) {
 	return peerIsChannel(fullId.peer)
 		? SponsoredPhrases::Channel
 		: SponsoredPhrases::Bot;
 }
 
-void AboutBox(
+[[maybe_unused]] void AboutBox(
 		not_null<Ui::GenericBox*> box,
 		std::shared_ptr<ChatHelpers::Show> show,
 		SponsoredPhrases phrases,
@@ -304,7 +304,7 @@ void AboutBox(
 	}
 }
 
-void ShowReportSponsoredBox(
+[[maybe_unused]] void ShowReportSponsoredBox(
 		std::shared_ptr<ChatHelpers::Show> show,
 		Data::SponsoredReportAction report) {
 	const auto guideLink = tr::link(
@@ -386,135 +386,34 @@ void ShowReportSponsoredBox(
 } // namespace
 
 void FillSponsored(
-		const Ui::Menu::MenuCallback &addAction,
-		std::shared_ptr<ChatHelpers::Show> show,
-		SponsoredPhrases phrases,
-		const Data::SponsoredMessages::Details &details,
-		Data::SponsoredReportAction report,
-		SponsoredMenuSettings settings) {
-	const auto session = &show->session();
-	const auto &info = details.info;
-	const auto dark = settings.dark;
-
-	if (!settings.skipInfo && !info.empty()) {
-		auto fillSubmenu = [&](not_null<Ui::PopupMenu*> menu) {
-			const auto allText = ranges::accumulate(
-				info,
-				TextWithEntities(),
-				[](TextWithEntities a, TextWithEntities b) {
-					return a.text.isEmpty() ? b : a.append('\n').append(b);
-				}).text;
-			const auto callback = [=] {
-				TextUtilities::SetClipboardText({ allText });
-				show->showToast({
-					.text = { tr::lng_text_copied(tr::now) },
-					.iconLottie = u"toast/copy"_q,
-					.iconLottieSize = st::toastLottieIconSize,
-				});
-			};
-			for (const auto &i : info) {
-				auto item = base::make_unique_q<Ui::Menu::MultilineAction>(
-					menu->menu(),
-					dark ? st::storiesMenu : st::defaultMenu,
-					(dark
-						? st::historySponsorInfoItemDark
-						: st::historySponsorInfoItem),
-					st::historyHasCustomEmojiPosition,
-					base::duplicate(i));
-				item->clicks(
-				) | rpl::on_next(callback, menu->lifetime());
-				menu->addAction(std::move(item));
-				if (i != details.info.back()) {
-					menu->addSeparator();
-				}
-			}
-		};
-		addAction({
-			.text = tr::lng_sponsored_info_menu(tr::now),
-			.handler = nullptr,
-			.icon = (dark
-				? &st::mediaMenuIconChannel
-				: &st::menuIconChannel),
-			.fillSubmenu = std::move(fillSubmenu),
-		});
-		addAction({
-			.separatorSt = (dark
-				? &st::mediaviewMenuSeparator
-				: &st::expandedMenuSeparator),
-			.isSeparator = true,
-		});
-	}
-	if (details.canReport) {
-		if (!settings.skipAbout) {
-			addAction(tr::lng_sponsored_menu_revenued_about(tr::now), [=] {
-				show->show(Box(AboutBox, show, phrases, details, report));
-			}, (dark ? &st::mediaMenuIconInfo : &st::menuIconInfo));
-		}
-
-		addAction(tr::lng_sponsored_menu_revenued_report(tr::now), [=] {
-			ShowReportSponsoredBox(show, report);
-		}, (dark ? &st::mediaMenuIconBlock : &st::menuIconBlock));
-
-		addAction({
-			.separatorSt = (dark
-				? &st::mediaviewMenuSeparator
-				: &st::expandedMenuSeparator),
-			.isSeparator = true,
-		});
-	}
-	addAction(tr::lng_sponsored_hide_ads(tr::now), [=] {
-		if (session->premium()) {
-			using Result = Data::SponsoredReportResult;
-			report.callback(Result::Id("-1"), [](const auto &) {});
-		} else {
-			ShowPremiumPreviewBox(show, PremiumFeature::NoAds);
-		}
-	}, (dark ? &st::mediaMenuIconCancel : &st::menuIconCancel));
+		const Ui::Menu::MenuCallback &,
+		std::shared_ptr<ChatHelpers::Show>,
+		SponsoredPhrases,
+		const Data::SponsoredMessages::Details &,
+		Data::SponsoredReportAction,
+		SponsoredMenuSettings) {
+	return;
 }
 
 void FillSponsored(
-		const Ui::Menu::MenuCallback &addAction,
-		std::shared_ptr<ChatHelpers::Show> show,
-		const FullMsgId &fullId,
-		SponsoredMenuSettings settings) {
-	const auto session = &show->session();
-	FillSponsored(
-		addAction,
-		show,
-		PhrasesForMessage(fullId),
-		session->sponsoredMessages().lookupDetails(fullId),
-		session->sponsoredMessages().createReportCallback(fullId),
-		settings);
+		const Ui::Menu::MenuCallback &,
+		std::shared_ptr<ChatHelpers::Show>,
+		const FullMsgId &,
+		SponsoredMenuSettings) {
+	return;
 }
 
 void ShowSponsored(
-		not_null<Ui::RpWidget*> parent,
-		std::shared_ptr<ChatHelpers::Show> show,
-		const FullMsgId &fullId) {
-	const auto menu = Ui::CreateChild<Ui::PopupMenu>(
-		parent.get(),
-		st::popupMenuWithIcons);
-
-	FillSponsored(
-		Ui::Menu::CreateAddActionCallback(menu),
-		show,
-		fullId);
-
-	menu->popup(QCursor::pos());
+		not_null<Ui::RpWidget*>,
+		std::shared_ptr<ChatHelpers::Show>,
+		const FullMsgId &) {
+	return;
 }
 
 void ShowSponsoredAbout(
-		std::shared_ptr<ChatHelpers::Show> show,
-		const FullMsgId &fullId) {
-	const auto session = &show->session();
-	show->showBox(Box([=](not_null<Ui::GenericBox*> box) {
-		AboutBox(
-			box,
-			show,
-			PhrasesForMessage(fullId),
-			session->sponsoredMessages().lookupDetails(fullId),
-			session->sponsoredMessages().createReportCallback(fullId));
-	}));
+		std::shared_ptr<ChatHelpers::Show>,
+		const FullMsgId &) {
+	return;
 }
 
 } // namespace Menu
