@@ -242,14 +242,14 @@ std::vector<EmbeddedScheme> EmbeddedThemes() {
 		
 		EmbeddedScheme{
 			EmbeddedType::Night,
-			qColor("1b1c17"),
-			qColor("45483d"),
-			qColor("30312b"),
-			qColor("30312b"),
-			qColor("b9cf7a"),
+			qColor("161b18"),
+			qColor("2d372f"),
+			qColor("232a25"),
+			qColor("232a25"),
+			qColor("5a7a5e"),
 			name(tr::lng_settings_theme_tinted),
 			":/gui/Google Dark.tdesktop-theme",
-			qColor("b9cf7a")
+			qColor("5a7a5e")
 		},
 		
 		EmbeddedScheme{
