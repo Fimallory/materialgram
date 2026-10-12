@@ -24,7 +24,7 @@ namespace {
 
 constexpr auto kMaxAccentColors = 3;
 constexpr auto kDayBaseFile = ":/gui/Google Day.tdesktop-theme"_cs;
-constexpr auto kNightBaseFile = ":/gui/Google Dark.tdesktop-theme"_cs;
+constexpr auto kNightBaseFile = ":/gui/Google Dark Sage.tdesktop-theme"_cs;
 
 const auto kColorizeIgnoredKeys = base::flat_set<QLatin1String>{ {
 	qstr("boxTextFgGood"),
@@ -248,7 +248,7 @@ std::vector<EmbeddedScheme> EmbeddedThemes() {
 			qColor("232a25"),
 			qColor("5a7a5e"),
 			name(tr::lng_settings_theme_tinted),
-			":/gui/Google Dark.tdesktop-theme",
+			":/gui/Google Dark Sage.tdesktop-theme",
 			qColor("5a7a5e")
 		},
 		
