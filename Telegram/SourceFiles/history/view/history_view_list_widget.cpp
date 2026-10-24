@@ -1805,21 +1805,6 @@ bool ListWidget::showCopyMediaRestriction(not_null<HistoryItem*> item) {
 }
 
 bool ListWidget::hasCopyRestrictionForSelected() const {
-	if (hasCopyRestriction()) {
-		return true;
-	}
-	if (_selected.empty()) {
-		if (_selectedTextItem && _selectedTextItem->forbidsForward()) {
-			return true;
-		}
-	}
-	for (const auto &[itemId, selection] : _selected) {
-		if (const auto item = session().data().message(itemId)) {
-			if (item->forbidsForward()) {
-				return true;
-			}
-		}
-	}
 	return false;
 }
 
@@ -5914,15 +5899,9 @@ void ConfirmSendNowSelectedItems(not_null<ListWidget*> widget) {
 }
 
 CopyRestrictionType CopyRestrictionTypeFor(
-		not_null<PeerData*> peer,
-		HistoryItem *item) {
-	return (peer->allowsForwarding() && (!item || !item->forbidsForward()))
-		? CopyRestrictionType::None
-		: peer->isUser()
-		? CopyRestrictionType::User
-		: peer->isBroadcast()
-		? CopyRestrictionType::Channel
-		: CopyRestrictionType::Group;
+		[[maybe_unused]] not_null<PeerData*> peer,
+		[[maybe_unused]] HistoryItem *item) {
+	return CopyRestrictionType::None;
 }
 
 CopyRestrictionType CopyMediaRestrictionTypeFor(

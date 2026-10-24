@@ -3738,17 +3738,11 @@ void HistoryInner::showContextMenu(QContextMenuEvent *e, bool showFromTouch) {
 	if (_dragStateItem) {
 		const auto view = viewByItem(_dragStateItem);
 		const auto textItem = view ? view->textItem() : _dragStateItem;
-		const auto wasAmount = _menu->actions().size();
 		HistoryView::AddEmojiPacksAction(
 			_menu,
 			textItem ? textItem : _dragStateItem,
 			HistoryView::EmojiPacksSource::Message,
 			_controller);
-		const auto added = (_menu->actions().size() > wasAmount);
-		HistoryView::AddSelectRestrictionAction(
-			_menu,
-			textItem ? textItem : _dragStateItem,
-			!added);
 	}
 	if (hasWhoReactedItem) {
 		HistoryView::AddWhoReactedAction(
@@ -3833,8 +3827,9 @@ void HistoryInner::showContextMenu(QContextMenuEvent *e, bool showFromTouch) {
 	e->accept();
 }
 
-bool HistoryInner::hasCopyRestriction(HistoryItem *item) const {
-	return !_peer->allowsForwarding() || (item && item->forbidsForward());
+bool HistoryInner::hasCopyRestriction(
+		[[maybe_unused]] HistoryItem *item) const {
+	return false;
 }
 
 bool HistoryInner::hasCopyMediaRestriction(
@@ -3867,17 +3862,7 @@ bool HistoryInner::showCopyMediaRestriction(not_null<HistoryItem*> item) {
 }
 
 bool HistoryInner::hasCopyRestrictionForSelected() const {
-	if (hasCopyRestriction()) {
-		return true;
-	}
-	for (const auto &item : _selected) {
-		if (item && item->forbidsForward()) {
-			return true;
-		}
-	}
-	return hasSelectedText()
-		&& _selectedTextItem
-		&& _selectedTextItem->forbidsForward();
+	return false;
 }
 
 bool HistoryInner::showCopyRestrictionForSelected() {

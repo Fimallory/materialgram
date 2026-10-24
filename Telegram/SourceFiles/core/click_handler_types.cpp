@@ -655,9 +655,7 @@ void FormattedDateClickHandler::onClick(ClickContext context) const {
 		[date, messageText] { ExportToCalendar(date, messageText); },
 		&st::menuIconSchedule);
 
-	const auto canForward = item
-		&& !item->forbidsForward()
-		&& item->history()->peer->allowsForwarding();
+	const auto canForward = (item != nullptr);
 	if (canForward) {
 		menu->addAction(
 			tr::lng_context_set_reminder(tr::now),

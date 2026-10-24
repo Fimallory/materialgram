@@ -1310,8 +1310,7 @@ bool OverlayWidget::hasCopyMediaRestriction(bool skipPremiumCheck) const {
 			? !story->canDownloadIfPremium()
 			: !story->canDownloadChecked();
 	}
-	return (_history && !_history->peer->allowsForwarding())
-		|| (_message && _message->forbidsSaving());
+	return (_message && _message->forbidsSaving());
 }
 
 bool OverlayWidget::showCopyMediaRestriction(bool skipPRemiumCheck) {

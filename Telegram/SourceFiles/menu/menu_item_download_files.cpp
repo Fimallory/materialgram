@@ -44,7 +44,7 @@ using Photos = std::vector<std::pair<not_null<PhotoData*>, FullMsgId>>;
 		HistoryItem *item,
 		Documents &documents,
 		Photos &photos) {
-	if (item && !item->forbidsForward()) {
+	if (item) {
 		if (const auto media = item->media()) {
 			if (const auto photo = media->photo()) {
 				photos.emplace_back(photo, item->fullId());

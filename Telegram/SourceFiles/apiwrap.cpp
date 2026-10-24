@@ -15,6 +15,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "api/api_chat_participants.h"
 #include "api/api_cloud_password.h"
 #include "api/api_communities.h"
+#include "api/api_forward_copy.h"
 #include "api/api_hash.h"
 #include "api/api_invite_links.h"
 #include "api/api_media.h"
@@ -3777,6 +3778,16 @@ void ApiWrap::forwardMessages(
 
 	auto &histories = _session->data().histories();
 
+	auto copyItems = HistoryItemsList();
+	for (auto i = begin(draft.items); i != end(draft.items());) {
+		if (Api::NeedsForwardCopy(*i)) {
+			copyItems.push_back(*i);
+			i = draft.items.erase(i);
+		} else {
+			++i;
+		}
+	}
+
 	for (auto i = begin(draft.items); i != end(draft.items);) {
 		const auto item = *i;
 		if (item->isSavedMusicItem()) {
@@ -3786,16 +3797,12 @@ void ApiWrap::forwardMessages(
 			++i;
 		}
 	}
-	if (draft.items.empty()) {
+	if (draft.items.empty() && copyItems.empty()) {
 		if (successCallback) {
 			successCallback();
 		}
 		return;
 	}
-	draft.options = HistoryView::Controls::NormalizeForwardOptions(
-		_session,
-		draft.items,
-		draft.options);
 
 	struct SharedCallback {
 		int requestsLeft = 0;
@@ -3806,6 +3813,35 @@ void ApiWrap::forwardMessages(
 		: std::shared_ptr<SharedCallback>();
 	if (successCallback) {
 		shared->callback = std::move(successCallback);
+	}
+
+	if (!draft.items.empty()) {
+		draft.options = HistoryView::Controls::NormalizeForwardOptions(
+			_session,
+			draft.items,
+			draft.options);
+	}
+	const auto startCopies = [&] {
+		if (copyItems.empty()) {
+			return;
+		}
+		if (shared) {
+			++shared->requestsLeft;
+		}
+		Api::ForwardCopyItems(
+			_session,
+			std::move(copyItems),
+			action,
+			(draft.options != Data::ForwardOptions::NoNamesAndCaptions),
+			[shared] {
+				if (shared && !--shared->requestsLeft) {
+					shared->callback();
+				}
+			});
+	};
+	if (draft.items.empty()) {
+		startCopies();
+		return;
 	}
 
 	const auto count = int(draft.items.size());
@@ -4008,6 +4044,7 @@ void ApiWrap::forwardMessages(
 		randomIds.push_back(MTP_long(randomId));
 	}
 	sendAccumulated();
+	startCopies();
 	_session->data().sendHistoryChangeNotifications();
 }
 

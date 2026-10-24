@@ -150,9 +150,8 @@ struct LocalMarkdownTarget {
 	return (session && itemId) ? session->data().message(itemId) : nullptr;
 }
 
-[[nodiscard]] bool CanShareMarkdownItem(not_null<HistoryItem*> item) {
-	const auto peer = item->history()->peer;
-	return peer->allowsForwarding() && !item->forbidsForward();
+[[nodiscard]] bool CanShareMarkdownItem([[maybe_unused]] not_null<HistoryItem*> item) {
+	return true;
 }
 
 [[nodiscard]] QString RichMessageKey(FullMsgId itemId) {
