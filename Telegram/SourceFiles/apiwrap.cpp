@@ -3779,7 +3779,7 @@ void ApiWrap::forwardMessages(
 	auto &histories = _session->data().histories();
 
 	auto copyItems = HistoryItemsList();
-	for (auto i = begin(draft.items); i != end(draft.items());) {
+	for (auto i = begin(draft.items); i != end(draft.items);) {
 		if (Api::NeedsForwardCopy(*i)) {
 			copyItems.push_back(*i);
 			i = draft.items.erase(i);

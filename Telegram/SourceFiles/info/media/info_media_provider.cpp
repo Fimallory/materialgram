@@ -80,7 +80,7 @@ Type Provider::type() {
 }
 
 bool Provider::hasSelectRestriction() {
-	return _peer->session().frozen();
+	return bool(_peer->session().frozen());
 }
 
 rpl::producer<bool> Provider::hasSelectRestrictionChanges() {
