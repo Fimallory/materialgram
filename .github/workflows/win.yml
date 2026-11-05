@@ -112,6 +112,46 @@ jobs:
           cd %TBUILD%
           %REPO_NAME%\Telegram\build\prepare\win.bat silent
 
+      - name: Restore build cache.
+        id: cache-out
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ env.TBUILD }}\${{ env.REPO_NAME }}\out
+          key: ${{ runner.OS }}-${{ matrix.arch }}-out-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.OS }}-${{ matrix.arch }}-out-
+
+      - name: Restore source timestamps.
+        if: env.ONLY_CACHE == 'false'
+        shell: bash
+        run: |
+          cd "$TBUILD/$REPO_NAME"
+          PREV="$(cat out/.forward-build-commit 2>/dev/null || true)"
+          if [ -z "$PREV" ]; then
+            echo "No previous build cache - full rebuild expected."
+            exit 0
+          fi
+          if ! git cat-file -e "$PREV^{commit}" 2>/dev/null; then
+            git fetch --depth=1 origin "$PREV" || true
+          fi
+          if ! git cat-file -e "$PREV^{commit}" 2>/dev/null; then
+            echo "Previous built commit $PREV is unavailable - full rebuild expected."
+            exit 0
+          fi
+          echo "Previous built commit: $PREV"
+          echo "Marking unchanged sources as old..."
+          find . -path ./.git -prune -o -path ./out -prune -o -type f -print0 \
+            | xargs -0 touch -d "2020-01-01 00:00:00" 2>/dev/null || true
+          echo "Marking changed files as new..."
+          git diff --name-only -z "$PREV" HEAD | while IFS= read -r -d '' f; do
+            if [ -d "$f/.git" ] || [ -f "$f/.git" ]; then
+              find "$f" -type f -print0 | xargs -0 touch 2>/dev/null || true
+            elif [ -e "$f" ]; then
+              touch "$f"
+            fi
+          done
+          echo "Timestamps restored."
+
       - name: Read configuration matrix.
         shell: bash
         run: |
@@ -170,6 +210,35 @@ jobs:
           %TDESKTOP_BUILD_DEFINE%
 
           cmake --build ..\out --config MinSizeRel --parallel
+
+          git rev-parse HEAD > ..\out\.forward-build-commit
+
+      - name: Build cache size.
+        if: always() && env.ONLY_CACHE == 'false'
+        shell: pwsh
+        run: |
+          $path = "$env:TBUILD\$env:REPO_NAME\out"
+          if (-not (Test-Path $path)) {
+            Write-Host "No build directory."
+            "SIZE_OK=false" | Out-File -FilePath $env:GITHUB_ENV -Append
+            exit 0
+          }
+          $size = (Get-ChildItem -Recurse -File $path -ErrorAction SilentlyContinue |
+            Measure-Object Length -Sum).Sum
+          Write-Host ("Build directory size: {0:N2} GB" -f ($size / 1GB))
+          if ($size -lt 5.5GB) {
+            "SIZE_OK=true" | Out-File -FilePath $env:GITHUB_ENV -Append
+          } else {
+            Write-Host "Too big for the 10 GB cache budget, not saving."
+            "SIZE_OK=false" | Out-File -FilePath $env:GITHUB_ENV -Append
+          }
+
+      - name: Save build cache.
+        if: success() && env.ONLY_CACHE == 'false' && env.SIZE_OK == 'true' && steps.cache-out.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ env.TBUILD }}\${{ env.REPO_NAME }}\out
+          key: ${{ runner.OS }}-${{ matrix.arch }}-out-${{ github.sha }}
 
       - name: Move artifact.
         if: (env.UPLOAD_ARTIFACT == 'true') || (github.ref == 'refs/heads/nightly')
