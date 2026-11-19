@@ -80,6 +80,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "ui/wrap/slide_wrap.h"
 #include "window/window_controller.h"
 #include "window/window_session_controller.h"
+#include "mtproto/facade.h"
+#include "ui/widgets/checkbox.h"
 #include "styles/style_chat_helpers.h"
 #include "styles/style_info.h"
 #include "styles/style_layers.h"
@@ -300,6 +302,32 @@ void Cover::refreshQrButtonGeometry(int newWidth) {
 	const auto buttonRight = st::infoProfileCover.rightSkip;
 	const auto inset = st::infoProfileLabeledButtonQrInset;
 	_qrButton->moveToRight(buttonRight - inset, buttonTop, newWidth);
+}
+
+void BuildOfflineWhenHiddenToggle(SectionBuilder &builder) {
+	builder.add([](const WidgetContext &ctx) {
+		const auto container = ctx.container.get();
+		auto wrap = object_ptr<Ui::VerticalLayout>(container);
+		const auto inner = wrap.data();
+		const auto settings = &Core::App().settings();
+
+		const auto checkbox = inner->add(
+			object_ptr<Ui::Checkbox>(
+				inner,
+				tr::lng_settings_offline_when_hidden(tr::now),
+				settings->offlineWhenHidden(),
+				st::settingsCheckbox),
+			st::settingsCheckboxPadding);
+		checkbox->checkedChanges(
+		) | rpl::on_next([=](bool checked) {
+			settings->setOfflineWhenHidden(checked);
+			Core::App().saveSettingsDelayed();
+			MTP::details::setNetworkSendBlocked(
+				checked && !Core::App().hasVisibleWindow());
+		}, inner->lifetime());
+
+		return SectionBuilder::WidgetToAdd{ .widget = std::move(wrap) };
+	});
 }
 
 void BuildSectionButtons(SectionBuilder &builder) {
@@ -682,6 +710,7 @@ void Main::setupContent() {
 		BuildSectionButtons(builder);
 		builder.addSkip();
 		BuildInterfaceScale(builder);
+		BuildOfflineWhenHiddenToggle(builder);
 		BuildPremiumSection(builder);
 		BuildHelpSection(builder);
 
@@ -757,6 +786,7 @@ const auto kMeta = BuildHelper({
 	builder.addSkip();
 
 	BuildInterfaceScale(builder);
+	BuildOfflineWhenHiddenToggle(builder);
 	BuildPremiumSection(builder);
 	BuildHelpSection(builder);
 });

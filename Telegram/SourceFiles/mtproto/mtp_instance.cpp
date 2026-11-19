@@ -15,6 +15,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "mtproto/mtproto_dc_options.h"
 #include "mtproto/config_loader.h"
 #include "mtproto/sender.h"
+#include "mtproto/facade.h"
 #include "storage/localstorage.h"
 #include "calls/calls_instance.h"
 #include "main/main_account.h" // Account::configUpdated.
@@ -1016,6 +1017,16 @@ void Instance::Private::sendRequest(
 		crl::time msCanWait,
 		bool needsLayer,
 		mtpRequestId afterRequestId) {
+	if (details::networkSendBlocked()) {
+		if (callbacks.fail) {
+			auto response = Response();
+			response.requestId = requestId;
+			callbacks.fail(Error::Local(
+				"NETWORK_DISABLED",
+				"Network sending is blocked."), response);
+		}
+		return;
+	}
 	const auto session = getSession(shiftedDcId);
 
 	request->requestId = requestId;

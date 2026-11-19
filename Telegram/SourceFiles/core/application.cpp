@@ -1381,6 +1381,15 @@ bool Application::savingPositionFor(
 	return !_windowInSettings || (_windowInSettings == window);
 }
 
+bool Application::hasVisibleWindow() const {
+	for (const auto &[id, window] : _windows) {
+		if (window->widget()->isVisible()) {
+			return true;
+		}
+	}
+	return false;
+}
+
 bool Application::hasActiveWindow(not_null<Main::Session*> session) const {
 	if (Quitting() || !_lastActiveWindow) {
 		return false;

@@ -11,12 +11,15 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "core/application.h"
 #include "main/main_account.h"
 
+#include <atomic>
+
 namespace MTP {
 namespace details {
 namespace {
 
 int PauseLevel = 0;
 rpl::event_stream<> Unpaused;
+std::atomic<bool> NetworkSendBlocked = false;
 
 } // namespace
 
@@ -37,6 +40,14 @@ void unpause() {
 
 rpl::producer<> unpaused() {
 	return Unpaused.events();
+}
+
+void setNetworkSendBlocked(bool blocked) {
+	NetworkSendBlocked.store(blocked, std::memory_order_release);
+}
+
+bool networkSendBlocked() {
+	return NetworkSendBlocked.load(std::memory_order_acquire);
 }
 
 } // namespace details

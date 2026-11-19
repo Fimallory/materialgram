@@ -18,6 +18,9 @@ void pause();
 void unpause();
 [[nodiscard]] rpl::producer<> unpaused();
 
+void setNetworkSendBlocked(bool blocked);
+[[nodiscard]] bool networkSendBlocked();
+
 } // namespace details
 
 // send(MTPhelp_GetConfig(), MTP::configDcId(dc)) - for dc enumeration

@@ -1373,6 +1373,14 @@ void Settings::writePrefImpl<bool>(std::string_view key, bool value) {
 	writePrefGeneric(key, value ? "\x1"_q : QByteArray());
 }
 
+bool Settings::offlineWhenHidden() {
+	return readPref<bool>(kOfflineWhenHiddenKey);
+}
+
+void Settings::setOfflineWhenHidden(bool value) {
+	writePref<bool>(kOfflineWhenHiddenKey, value);
+}
+
 QString Settings::getSoundPath(const QString &key) const {
 	auto it = _soundOverrides.find(key);
 	if (it != _soundOverrides.end()) {

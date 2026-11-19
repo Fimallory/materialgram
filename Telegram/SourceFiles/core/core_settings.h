@@ -39,6 +39,8 @@ namespace Core {
 
 inline constexpr auto kScreenReaderModeDisabledKey
 	= "screen-reader-mode-disabled"_cs;
+inline constexpr auto kOfflineWhenHiddenKey
+	= "offline-when-hidden"_cs;
 
 struct WindowPosition {
 	int32 moncrc = 0;
@@ -819,6 +821,8 @@ public:
 	[[nodiscard]] CloseBehavior closeBehavior() const {
 		return _closeBehavior;
 	}
+	[[nodiscard]] bool offlineWhenHidden();
+	void setOfflineWhenHidden(bool value);
 	void setTrayIconMonochrome(bool value) {
 		_trayIconMonochrome = value;
 	}

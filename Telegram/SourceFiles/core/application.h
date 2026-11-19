@@ -164,6 +164,7 @@ public:
 	}
 
 	// Windows interface.
+	[[nodiscard]] bool hasVisibleWindow() const;
 	bool hasActiveWindow(not_null<Main::Session*> session) const;
 	[[nodiscard]] bool savingPositionFor(
 		not_null<Window::Controller*> window) const;

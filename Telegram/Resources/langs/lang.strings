@@ -934,6 +934,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 "lng_settings_suggestion_password_step_finish_title" = "Perfect!";
 "lng_settings_suggestion_password_step_finish_about" = "You still remember your password.";
 
+"lng_settings_offline_when_hidden" = "Disconnect when no window is open";
+
 "lng_settings_power_menu" = "Battery and Animations";
 "lng_settings_power_title" = "Power Usage";
 "lng_settings_power_subtitle" = "Power saving options";

@@ -42,6 +42,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "apiwrap.h"
 #include "mainwidget.h" // session->content()->windowShown().
 #include "tray.h"
+#include "mtproto/facade.h"
 #include "styles/style_window.h"
 #include "styles/style_dialogs.h" // ChildSkip().x() for new child windows.
 
@@ -583,6 +584,11 @@ void MainWindow::handleActiveChanged(bool active) {
 }
 
 void MainWindow::handleVisibleChanged(bool visible) {
+	const auto offlineEnabled = Core::App().settings().offlineWhenHidden();
+	MTP::details::setNetworkSendBlocked(
+		offlineEnabled && !Core::Quitting()
+		&& !visible && !Core::App().hasVisibleWindow());
+
 	if (visible) {
 		if (_maximizedBeforeHide) {
 			DEBUG_LOG(("Window Pos: Window was maximized before hidding, setting maximized."));
